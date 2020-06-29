@@ -1,8 +1,11 @@
+process.env.NTBA_FIX_319 = "1";
+
 import OpenAPI from "@tinkoff/invest-openapi-js-sdk";
 import axios from "axios";
 import TelegramBot from "node-telegram-bot-api";
 import interval from "interval-promise";
-import dotenv from "dotenv";
+import yargs from "yargs";
+import figlet from "figlet";
 
 const ACCOUNT_BALANCE_CURRENCY = "RUB";
 
@@ -32,6 +35,8 @@ interface PortfolioReport extends PortfolioReportItem {
 }
 
 async function getCurrencies() {
+  console.log("Загрузка курсов валют...");
+
   const response = await axios.post(
     "https://api.tinkoff.ru/trading/currency/list",
     {
@@ -112,6 +117,8 @@ function getCurrencyRate(
 
 async function getPortfolioReport(api: OpenAPI, targetCurrency: string) {
   try {
+    console.log("Создание отчета...");
+
     const portfolioReport: PortfolioReport = {
       currency: targetCurrency,
       price: 0,
@@ -231,7 +238,11 @@ function getPriceString(currency: string, price: number, yield_: number) {
   return str;
 }
 
-async function sendPortfolioReport(bot: TelegramBot, report: PortfolioReport) {
+async function sendPortfolioReport(
+  bot: TelegramBot,
+  chatId: string,
+  report: PortfolioReport
+) {
   try {
     let message =
       `<b>Портфель:</b> ` +
@@ -252,7 +263,8 @@ async function sendPortfolioReport(bot: TelegramBot, report: PortfolioReport) {
       `<code>${report.accountBalance.price.toFixed(2)} ` +
       `${report.accountBalance.currency}</code>`;
 
-    bot.sendMessage(process.env.TELEGRAM_CHAT_ID || "", message, {
+    console.log("Отправка отчета в чат...");
+    bot.sendMessage(chatId, message, {
       parse_mode: "HTML",
     });
   } catch (e) {
@@ -260,22 +272,60 @@ async function sendPortfolioReport(bot: TelegramBot, report: PortfolioReport) {
   }
 }
 
-async function main() {
-  dotenv.config();
+function printHello() {
+  return new Promise((resolve, reject) => {
+    figlet("Portfolio Monitor", function (err, data) {
+      if (err) {
+        reject(err);
+        return;
+      }
+      console.log(data);
+      resolve();
+    });
+  });
+}
+
+export default async function main() {
+  await printHello();
+
+  const args = yargs
+    .options({
+      "tinkoff-token": {
+        type: "string",
+        description: "Tinkoff API token",
+      },
+      "telegram-token": {
+        type: "string",
+        description: "Telegram API token",
+      },
+      "telegram-chat": {
+        type: "string",
+        description: "Telegram chat ID",
+      },
+    })
+    .demandOption(["tinkoff-token", "telegram-token", "telegram-chat"]).argv;
 
   const apiURL = "https://api-invest.tinkoff.ru/openapi";
   const socketURL = "wss://api-invest.tinkoff.ru/openapi/md/v1/md-openapi/ws";
-  const secretToken = process.env.TELEGRAM_API_TOKEN || "";
+  const secretToken = args["tinkoff-token"];
   const api = new OpenAPI({ apiURL, secretToken, socketURL });
-  const bot = new TelegramBot(process.env.TINKOFF_API_TOKEN || "", {
+  const bot = new TelegramBot(args["telegram-token"], {
     polling: false,
   });
+
+  const intervalMinutes = 5;
+
+  const report = await getPortfolioReport(api, "RUB");
+  if (!report) return;
+  sendPortfolioReport(bot, args["telegram-chat"], report);
+
+  console.log(`Ожидание ${intervalMinutes} мин...`);
 
   interval(async () => {
     const report = await getPortfolioReport(api, "RUB");
     if (!report) return;
-    sendPortfolioReport(bot, report);
-  }, 10 * 60 * 1000);
-}
+    sendPortfolioReport(bot, args["telegram-chat"], report);
 
-main();
+    console.log(`Ожидание ${intervalMinutes} мин...`);
+  }, intervalMinutes * 60 * 1000);
+}
