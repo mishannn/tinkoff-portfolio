@@ -274,6 +274,7 @@ async function sendPortfolioReport(
 
     await bot.sendMessage(chatId, message, {
       parse_mode: "HTML",
+      disable_notification: true,
     });
   } catch (e) {
     console.log(e);
