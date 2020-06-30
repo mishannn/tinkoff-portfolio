@@ -238,33 +238,41 @@ function getPriceString(currency: string, price: number, yield_: number) {
   return str;
 }
 
+async function sendPortfolioDetails(
+  bot: TelegramBot,
+  chatId: number,
+  report: PortfolioReport
+) {
+  let message = "";
+
+  report.positions.forEach((position) => {
+    message +=
+      `<b>${position.name}:</b> ` +
+      `${getPriceString(position.currency, position.price, position.yield)}\n`;
+  });
+
+  message +=
+    `<b>Баланс:</b> ` +
+    `<code>${report.accountBalance.price.toFixed(2)} ` +
+    `${report.accountBalance.currency}</code>`;
+
+  console.log("Отправка отчета в чат...");
+  await bot.sendMessage(chatId, message, {
+    parse_mode: "HTML",
+  });
+}
+
 async function sendPortfolioReport(
   bot: TelegramBot,
-  chatId: string,
+  chatId: number,
   report: PortfolioReport
 ) {
   try {
     let message =
       `<b>Портфель:</b> ` +
-      `${getPriceString(report.currency, report.price, report.yield)}\n`;
+      `${getPriceString(report.currency, report.price, report.yield)}`;
 
-    report.positions.forEach((position) => {
-      message +=
-        `<b>${position.name}:</b> ` +
-        `${getPriceString(
-          position.currency,
-          position.price,
-          position.yield
-        )}\n`;
-    });
-
-    message +=
-      `<b>Баланс:</b> ` +
-      `<code>${report.accountBalance.price.toFixed(2)} ` +
-      `${report.accountBalance.currency}</code>`;
-
-    console.log("Отправка отчета в чат...");
-    bot.sendMessage(chatId, message, {
+    await bot.sendMessage(chatId, message, {
       parse_mode: "HTML",
     });
   } catch (e) {
@@ -310,21 +318,38 @@ export default async function main() {
   const secretToken = args["tinkoff-token"];
   const api = new OpenAPI({ apiURL, secretToken, socketURL });
   const bot = new TelegramBot(args["telegram-token"], {
-    polling: false,
+    polling: true,
+  });
+
+  await bot.setMyCommands([
+    {
+      command: "/details",
+      description: "Получить детали портфеля",
+    },
+  ]);
+
+  const telegramChat = Number(args["telegram-chat"]);
+
+  bot.on("message", async (message) => {
+    if (message.text === "/details" && message.from?.id === telegramChat) {
+      const report = await getPortfolioReport(api, "RUB");
+      if (!report) return;
+      await sendPortfolioDetails(bot, telegramChat, report);
+    }
   });
 
   const intervalMinutes = 5;
 
   const report = await getPortfolioReport(api, "RUB");
   if (!report) return;
-  sendPortfolioReport(bot, args["telegram-chat"], report);
+  await sendPortfolioReport(bot, telegramChat, report);
 
   console.log(`Ожидание ${intervalMinutes} мин...`);
 
   interval(async () => {
     const report = await getPortfolioReport(api, "RUB");
     if (!report) return;
-    sendPortfolioReport(bot, args["telegram-chat"], report);
+    await sendPortfolioReport(bot, telegramChat, report);
 
     console.log(`Ожидание ${intervalMinutes} мин...`);
   }, intervalMinutes * 60 * 1000);
