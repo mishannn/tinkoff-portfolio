@@ -347,6 +347,21 @@ export default async function main() {
   console.log(`Ожидание ${intervalMinutes} мин...`);
 
   interval(async () => {
+    let normalTrading = false;
+    try {
+      const testInstrumentOrderbook = await api.orderbookGet({
+        figi: "BBG000BPH459",
+      });
+      normalTrading = testInstrumentOrderbook.tradeStatus === "NormalTrading";
+    } catch (e) {
+      console.log("Произошла ошибка при проверке доступности биржи");
+    }
+
+    if (!normalTrading) {
+      console.log("Биржа недоступна");
+      return;
+    }
+
     const report = await getPortfolioReport(api, "RUB");
     if (!report) return;
     await sendPortfolioReport(bot, telegramChat, report);
