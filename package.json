@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@tinkoff/invest-openapi-js-sdk": "^1.2.13",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "figlet": "^1.4.0",
     "interval-promise": "^1.4.0",
     "node-telegram-bot-api": "^0.50.0",
