@@ -1,6 +1,6 @@
 {
   "name": "tinkoff-portfolio",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "main": "dist/index.js",
   "bin": {
     "tinkoff-portfolio": "start.js"
@@ -13,16 +13,17 @@
     "start": "node start.js"
   },
   "dependencies": {
-    "@tinkoff/invest-openapi-js-sdk": "^1.2.13",
-    "axios": "^0.19.2",
+    "@tinkoff/invest-openapi-js-sdk": "^1.5.0",
+    "axios": "^0.24.0",
     "figlet": "^1.4.0",
     "interval-promise": "^1.4.0",
-    "node-telegram-bot-api": "^0.50.0",
+    "node-telegram-bot-api": "^0.56.0",
     "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@types/figlet": "^1.2.0",
     "@types/node": "^14.0.13",
+    "@types/node-telegram-bot-api": "^0.53.2",
     "@types/request": "^2.48.5",
     "@types/yargs": "^15.0.5",
     "cross-env": "^7.0.2",
