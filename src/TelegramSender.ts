@@ -1,4 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
+import { getFormattedPriceValue } from "./helpers";
 import { PortfolioReport } from "./types";
 
 export default class TelegramSender {
@@ -20,20 +21,20 @@ export default class TelegramSender {
 
       report.positions.forEach((position) => {
         message +=
-          `<b>${position.name}:</b>\n` +
+          `<b>${position.name}</b>\n` +
           `${this.getPriceString(
             position.currency,
             position.price,
             position.yield
-          )}\n`;
+          )}\n\n`;
       });
 
       message +=
         `<b>Баланс:</b>\n` +
-        `${this.getPriceString(
+        this.getPriceString(
           report.accountBalance.currency,
           report.accountBalance.price
-        )}`;
+        );
 
       console.log("Отправка отчета в чат...");
 
@@ -47,14 +48,14 @@ export default class TelegramSender {
 
   async sendPortfolioReport(report: PortfolioReport) {
     try {
-      const message =
-        `<b>Портфель:</b>\n` +
-        `${this.getPriceString(report.currency, report.price, report.yield)}`;
-
-      await this._telegramBot.sendMessage(this._chatId, message, {
-        parse_mode: "HTML",
-        disable_notification: true,
-      });
+      await this._telegramBot.sendMessage(
+        this._chatId,
+        this.getPriceString(report.currency, report.price, report.yield),
+        {
+          parse_mode: "HTML",
+          disable_notification: true,
+        }
+      );
     } catch (e) {
       console.log(e);
     }
@@ -74,17 +75,17 @@ export default class TelegramSender {
   }
 
   private getPriceString(currency: string, price: number, yield_ = 0) {
-    let str = `💼 <code>${price.toFixed(2)} ${currency}</code>`;
+    let str = `💼 ${getFormattedPriceValue(price)} ${currency}`;
 
     if (yield_) {
       const yieldIcon = yield_ > 0 ? "✅" : "🆘";
       const yieldSign = yield_ > 0 ? "+" : "";
-      const fixedYield = yield_.toFixed(2);
+      const fixedYield = getFormattedPriceValue(yield_);
       const fixedYieldPercents = ((yield_ / (price - yield_)) * 100).toFixed(2);
 
       str +=
-        `\n${yieldIcon} <code>${yieldSign}${fixedYield} ${currency}` +
-        ` (${yieldSign}${fixedYieldPercents}%)</code>`;
+        `\n${yieldIcon} ${yieldSign}${fixedYield} ${currency}` +
+        ` (${yieldSign}${fixedYieldPercents}%)`;
     }
 
     return str;
