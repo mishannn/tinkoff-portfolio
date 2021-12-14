@@ -20,7 +20,7 @@ export default class TelegramSender {
 
       report.positions.forEach((position) => {
         message +=
-          `<b>${position.name}:</b> ` +
+          `<b>${position.name}:</b>\n` +
           `${this.getPriceString(
             position.currency,
             position.price,
@@ -29,9 +29,11 @@ export default class TelegramSender {
       });
 
       message +=
-        `<b>Баланс:</b> ` +
-        `<code>${report.accountBalance.price.toFixed(2)} ` +
-        `${report.accountBalance.currency}</code>`;
+        `<b>Баланс:</b>\n` +
+        `${this.getPriceString(
+          report.accountBalance.currency,
+          report.accountBalance.price
+        )}`;
 
       console.log("Отправка отчета в чат...");
 
@@ -46,7 +48,7 @@ export default class TelegramSender {
   async sendPortfolioReport(report: PortfolioReport) {
     try {
       const message =
-        `<b>Портфель:</b> ` +
+        `<b>Портфель:</b>\n` +
         `${this.getPriceString(report.currency, report.price, report.yield)}`;
 
       await this._telegramBot.sendMessage(this._chatId, message, {
@@ -71,17 +73,18 @@ export default class TelegramSender {
     }
   }
 
-  private getPriceString(currency: string, price: number, yield_: number) {
-    let str = `<code>${price.toFixed(2)} ${currency}</code>`;
+  private getPriceString(currency: string, price: number, yield_ = 0) {
+    let str = `💼 <code>${price.toFixed(2)} ${currency}</code>`;
 
     if (yield_) {
-      str += ` | <i>${yield_ > 0 ? "+" : ""}${yield_.toFixed(2)} ${currency}`;
-
-      const yieldPercents = yield_ / price;
+      const yieldIcon = yield_ > 0 ? "✅" : "🆘";
+      const yieldSign = yield_ > 0 ? "+" : "";
+      const fixedYield = yield_.toFixed(2);
+      const fixedYieldPercents = ((yield_ / (price - yield_)) * 100).toFixed(2);
 
       str +=
-        ` (${yieldPercents > 0 ? "+" : ""}` +
-        `${(yieldPercents * 100).toFixed(2)}%)</i>`;
+        `\n${yieldIcon} <code>${yieldSign}${fixedYield} ${currency}` +
+        ` (${yieldSign}${fixedYieldPercents}%)</code>`;
     }
 
     return str;

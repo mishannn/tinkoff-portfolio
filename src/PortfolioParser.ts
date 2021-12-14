@@ -84,6 +84,8 @@ export default class PortfolioParser {
     await this._currencyConverter.loadCurrencies();
 
     const positions = await this.getPositions();
+    positions.sort((a, b) => b.yield - a.yield);
+
     const accountBalancePrice = await this.getAccountBalancePrice();
 
     const statistic = {
