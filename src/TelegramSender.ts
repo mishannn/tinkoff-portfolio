@@ -1,6 +1,14 @@
+import { InstrumentType } from "@tinkoff/invest-openapi-js-sdk";
 import TelegramBot from "node-telegram-bot-api";
 import { getFormattedPriceValue, getYieldPercents } from "./helpers";
-import { PortfolioReport } from "./types";
+import { PortfolioReport, PortfolioReportPosition } from "./types";
+
+const instrumentTypeUrlCategory: Record<InstrumentType, string> = {
+  Stock: "stocks",
+  Etf: "etfs",
+  Currency: "currencies",
+  Bond: "bonds",
+};
 
 export default class TelegramSender {
   private _telegramBot: TelegramBot;
@@ -15,18 +23,34 @@ export default class TelegramSender {
     return this._chatId;
   }
 
+  private getPositionUrl(position: PortfolioReportPosition): string {
+    if (!position.ticker) {
+      return "";
+    }
+
+    const category = instrumentTypeUrlCategory[position.type];
+
+    return `https://www.tinkoff.ru/invest/${category}/${position.ticker}`;
+  }
+
   async sendPortfolioDetails(report: PortfolioReport) {
     try {
       let message = "";
 
       report.positions.forEach((position) => {
-        message +=
-          `<b>${position.name}</b>\n` +
-          `${this.getPriceString(
-            position.currency,
-            position.price,
-            position.yield
-          )}\n\n`;
+        message += `<b>${position.name}</b>\n`;
+
+        const positionUrl = this.getPositionUrl(position);
+
+        if (positionUrl) {
+          message += `${positionUrl}\n`;
+        }
+
+        message += `${this.getPriceString(
+          position.currency,
+          position.price,
+          position.yield
+        )}\n\n`;
       });
 
       message +=
@@ -40,6 +64,7 @@ export default class TelegramSender {
 
       await this._telegramBot.sendMessage(this._chatId, message, {
         parse_mode: "HTML",
+        disable_web_page_preview: true,
       });
     } catch (e) {
       console.log(e);

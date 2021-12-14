@@ -1,3 +1,5 @@
+import { InstrumentType } from "@tinkoff/invest-openapi-js-sdk";
+
 export interface PortfolioReportItem {
   currency: string;
   price: number;
@@ -7,6 +9,7 @@ export interface PortfolioReportItem {
 export interface PortfolioReportPosition extends PortfolioReportItem {
   name: string;
   ticker: string;
+  type: InstrumentType;
 }
 
 export interface PortfolioReport extends PortfolioReportItem {

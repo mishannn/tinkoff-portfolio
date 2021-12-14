@@ -3,6 +3,8 @@ import axios from "axios";
 interface ConvertCurrencyRate {
   srcCurrency: string;
   dstCurrency: string;
+  isin: string;
+  ticker: string;
   value: number;
 }
 
@@ -48,18 +50,27 @@ export default class CurrencyConverter {
     }
 
     this._currencies = values.reduce((acc, value) => {
-      const ticker: string = value?.symbol?.ticker;
-      const price: number = value?.prices?.last?.value;
+      const ticker: string = value?.symbol?.ticker ?? "";
+      const isin: string = value?.symbol?.isin ?? "";
+      const price: number = value?.prices?.last?.value ?? 0;
 
-      if (!ticker || ticker.length !== 6 || !price) {
+      if (!ticker || ticker.length !== 6 || !isin || !price) {
         return acc;
       }
 
       const srcCurrency = ticker.slice(0, 3);
       const dstCurrency = ticker.slice(3, 6);
 
-      return [...acc, { srcCurrency, dstCurrency, value: price }];
-    }, [] as ConvertCurrencyRate[]);
+      const result: ConvertCurrencyRate = {
+        srcCurrency,
+        dstCurrency,
+        ticker,
+        isin,
+        value: price,
+      };
+
+      return [...acc, result];
+    }, []);
   }
 
   convert(value: number, srcCurrency: string, dstCurrency: string): number {
@@ -103,5 +114,17 @@ export default class CurrencyConverter {
     }
 
     return undefined;
+  }
+
+  getTickerByIsin(isin: string): string {
+    const foundCurrency = this._currencies.find(
+      (currency) => currency.isin === isin
+    );
+
+    if (!foundCurrency) {
+      return "";
+    }
+
+    return foundCurrency.ticker;
   }
 }

@@ -1,3 +1,4 @@
+import { PortfolioPosition } from "@tinkoff/invest-openapi-js-sdk";
 import CurrencyConverter from "./CurrencyConverter";
 import { getYieldPercents } from "./helpers";
 import InvestApi from "./InvestApi";
@@ -20,6 +21,23 @@ export default class PortfolioParser {
     this._targetCurrency = targetCurrency;
   }
 
+  private getPositionTicker(position: PortfolioPosition): string {
+    const positionTicker = position.ticker ?? "";
+
+    if (position.instrumentType !== "Currency") {
+      return positionTicker;
+    }
+
+    const currencyTicker =
+      this._currencyConverter.getTickerByIsin(positionTicker);
+
+    if (!currencyTicker) {
+      return positionTicker;
+    }
+
+    return currencyTicker;
+  }
+
   private async getPositions(): Promise<PortfolioReportPosition[]> {
     const portfolio = await this._investApi.portfolio();
 
@@ -32,7 +50,7 @@ export default class PortfolioParser {
       }
 
       const positionName = position.name;
-      const positionTicker = position.ticker;
+      const positionTicker = this.getPositionTicker(position);
       const positionBalance = position.balance;
 
       const positionAveragePrice = this._currencyConverter.convert(
@@ -55,6 +73,7 @@ export default class PortfolioParser {
         {
           currency: this._targetCurrency,
           name: positionName,
+          type: position.instrumentType,
           price: positionTotalPrice,
           ticker: positionTicker || "",
           yield: positionYieldValue,
