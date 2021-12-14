@@ -8,6 +8,10 @@ import TelegramSender from "./TelegramSender";
 
 const botCommands = [
   {
+    command: "/balance",
+    description: "Получить баланс портфеля",
+  },
+  {
     command: "/details",
     description: "Получить детали портфеля",
   },
@@ -45,18 +49,24 @@ export default class Worker {
     );
   }
 
-  private async onDetailsCommand(message: Message): Promise<void> {
-    const chatId = this._telegramSender.chatId;
+  private async onCommand(command: string): Promise<void> {
+    if (command === "/balance") {
+      return this.parseAndSendPortfolioReport();
+    }
 
-    if (message.text !== "/details" || message.from?.id !== chatId) return;
-
-    await this.parseAndSendPortfolioDetails();
+    if (command === "/details") {
+      return this.parseAndSendPortfolioDetails();
+    }
   }
 
   private async initializeTelegram() {
-    this._telegramBot.on("message", (message) =>
-      this.onDetailsCommand(message)
-    );
+    this._telegramBot.on("message", (message) => {
+      if (!message.text || message.from?.id !== this._telegramSender.chatId) {
+        return;
+      }
+
+      this.onCommand(message.text);
+    });
 
     await this._telegramBot.setMyCommands(botCommands);
   }

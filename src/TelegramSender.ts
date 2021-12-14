@@ -1,5 +1,5 @@
 import TelegramBot from "node-telegram-bot-api";
-import { getFormattedPriceValue } from "./helpers";
+import { getFormattedPriceValue, getYieldPercents } from "./helpers";
 import { PortfolioReport } from "./types";
 
 export default class TelegramSender {
@@ -74,14 +74,35 @@ export default class TelegramSender {
     }
   }
 
+  private getYeildIcon(yieldPercents: number) {
+    if (yieldPercents > 15) {
+      return "✅";
+    }
+
+    if (yieldPercents > 3) {
+      return "🔼";
+    }
+
+    if (yieldPercents > -3) {
+      return "☯️";
+    }
+
+    if (yieldPercents > -15) {
+      return "✴️";
+    }
+
+    return "🆘";
+  }
+
   private getPriceString(currency: string, price: number, yield_ = 0) {
     let str = `💼 ${getFormattedPriceValue(price)} ${currency}`;
 
     if (yield_) {
-      const yieldIcon = yield_ > 0 ? "✅" : "🆘";
+      const yieldPercents = getYieldPercents(price, yield_);
+      const yieldIcon = this.getYeildIcon(yieldPercents);
       const yieldSign = yield_ > 0 ? "+" : "";
       const fixedYield = getFormattedPriceValue(yield_);
-      const fixedYieldPercents = ((yield_ / (price - yield_)) * 100).toFixed(2);
+      const fixedYieldPercents = yieldPercents.toFixed(2);
 
       str +=
         `\n${yieldIcon} ${yieldSign}${fixedYield} ${currency}` +

@@ -1,4 +1,5 @@
 import CurrencyConverter from "./CurrencyConverter";
+import { getYieldPercents } from "./helpers";
 import InvestApi from "./InvestApi";
 import { PortfolioReport, PortfolioReportPosition } from "./types";
 
@@ -84,7 +85,10 @@ export default class PortfolioParser {
     await this._currencyConverter.loadCurrencies();
 
     const positions = await this.getPositions();
-    positions.sort((a, b) => b.yield - a.yield);
+    positions.sort(
+      (a, b) =>
+        getYieldPercents(b.price, b.yield) - getYieldPercents(a.price, a.yield)
+    );
 
     const accountBalancePrice = await this.getAccountBalancePrice();
 
