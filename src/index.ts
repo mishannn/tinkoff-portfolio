@@ -2,7 +2,7 @@ process.env.NTBA_FIX_319 = "1";
 
 import yargs from "yargs";
 import figlet from "figlet";
-import Worker from "./worker";
+import Worker from "./Worker";
 
 function printHello() {
   return new Promise<void>((resolve, reject) => {
