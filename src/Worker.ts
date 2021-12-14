@@ -98,7 +98,7 @@ export default class Worker {
   async run() {
     await this.initializeTelegram();
 
-    const intervalMinutes = 5;
+    const intervalMinutes = 30;
 
     await this.parseAndSendPortfolioReport();
 
