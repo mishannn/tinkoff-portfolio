@@ -10,7 +10,8 @@
     "build": "yarn clean && tsc",
     "dev": "yarn clean && tsc -w",
     "clean": "rimraf dist",
-    "start": "node start.js"
+    "start": "node start.js",
+    "release": "release-it"
   },
   "dependencies": {
     "@tinkoff/invest-openapi-js-sdk": "^1.5.0",
@@ -27,6 +28,20 @@
     "@types/request": "^2.48.5",
     "@types/yargs": "^15.0.5",
     "cross-env": "^7.0.2",
+    "release-it": "^14.11.8",
     "rimraf": "^3.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "git": {
+      "requireBranch": "master",
+      "commitMessage": "chore: release v${version}"
+    },
+    "hooks": {
+      "before:bump": "yarn build"
+    }
   }
 }
