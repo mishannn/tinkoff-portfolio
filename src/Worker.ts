@@ -1,10 +1,10 @@
 import interval from "interval-promise";
-import TelegramBot, { Message } from "node-telegram-bot-api";
-import CurrencyConverter from "./CurrencyConverter";
-import { getError } from "./helpers";
-import InvestApi from "./InvestApi";
-import PortfolioParser from "./PortfolioParser";
-import TelegramSender from "./TelegramSender";
+import TelegramBot from "node-telegram-bot-api";
+import CurrencyConverter from "./services/CurrencyConverter";
+import { getError } from "./helpers/errors";
+import TelegramSender from "./services/TelegramSender";
+import InvestApi from "./services/InvestApi";
+import PortfolioParser from "./services/PortfolioParser";
 
 const botCommands = [
   {
@@ -79,7 +79,7 @@ export default class Worker {
         throw new Error("Биржа недоступна");
       }
 
-      const report = await this._portfolioParser.getPortfolioReport();
+      const report = await this._portfolioParser.createPortfolioReport();
 
       if (!report) return;
 
@@ -93,7 +93,7 @@ export default class Worker {
 
   private async parseAndSendPortfolioDetails(): Promise<void> {
     try {
-      const report = await this._portfolioParser.getPortfolioReport();
+      const report = await this._portfolioParser.createPortfolioReport();
 
       if (!report) return;
 
